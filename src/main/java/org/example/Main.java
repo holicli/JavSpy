@@ -14,10 +14,10 @@ import java.util.*;
 
 public class Main {
     private static final List<String> likeList = Arrays.asList(new String[]{"河北彩花",
-            "波多野結衣","美谷朱里","JULIA","明里つむぎ","森沢かな","新ありな","桃乃木かな","神宮寺ナオ","希島あいり","篠田ゆう"});
+            "波多野結衣","美谷朱里","JULIA","明里つむぎ","森沢かな","新ありな","桃乃木かな","神宮寺ナオ","希島あいり","小花のん","篠田ゆう","楓カレン"});
 
     private static final List<String> ids = Arrays.asList(new String[]{"sl1",
-            "2jv","reg","2de","qs6","ef2","zk9","pmv","p6v","rtn","9pj","2pv"});
+            "2jv","reg","2de","qs6","ef2","zk9","pmv","p6v","rtn","9pj","2pv","yoy","rki","u4m"});
     public static String getRequest(String urls) {
         try {
             // 创建URL对象
@@ -58,9 +58,9 @@ public class Main {
     public static Boolean isToday(String dateStr){
         LocalDate date = LocalDate.parse(dateStr);
 
-        LocalDate today = LocalDate.now();
+//        LocalDate today = LocalDate.parse("2023-09-01");
 
-//        LocalDate toyear = LocalDate.parse("2023-01-01");
+        LocalDate today = LocalDate.parse("2023-06-01");
         if (date.isAfter(today)) {
             return true;
         } else {
@@ -98,6 +98,51 @@ public class Main {
             if (Objects.equals("",mm.getId()) || Objects.isNull(mm.getId())){
                 continue;
             }
+            if (!isToday(mm.getDate())){
+                break;
+            }
+            String details = getRequest(fanhaoUrl + mm.getId());
+            if (Objects.isNull(request)){
+                return;
+            }
+            SearchResult searchResult = JSON.parseObject(details, SearchResult.class);
+            List<magNets> mms  = searchResult.getMagnets();
+            if (mms.size()>0){
+                magNets magNetss  = searchResult.getMagnets().get(0);
+                String magnet = magNetss.getLink();
+                String size = magNetss.getSize();
+                String isIs = "0";
+//                for (magNets magNet: searchResult.getMagnets()){
+//                    if (goodSize(magNet)){
+//                        magNetss = magNet;
+//                        isIs = "1";
+//                        break;
+//                    }
+//                }
+//                System.out.println("<tr>");
+//                System.out.print("<th>"+searchResult.getId()+"</th><th>"+searchResult.getDate()+"</th><th>"+magNetss.getLink()+"</th><th>"+magNetss.getLink()+"</th>");
+//                System.out.println("<th>"+"<img style='width:5.25rem;height:5.25rem;margin:0 auto;display:block;background-position:0 0' src='"+searchResult.getImg()+"'>"+"</th>");
+//                System.out.println("</tr>");
+                System.out.println(magNetss.getLink());
+            }
+        }
+    }
+
+    public static void getByType(Integer page){
+        String fanhaoUrl = "http://192.168.0.120:33000/api/v1/movies/";
+        String request = getRequest("http://192.168.0.120:33000/api/v1/movies?page="+page+"&filterType=genre&filterValue=7x&magnet=exist");
+        if (Objects.isNull(request)){
+            return;
+        }
+        pageResult pageresult = JSON.parseObject(request, pageResult.class);
+        List<movies> moviesList = pageresult.getMovies();
+        if (moviesList.size()<0){
+            return;
+        }
+        for (movies mm: moviesList){
+            if (Objects.equals("",mm.getId()) || Objects.isNull(mm.getId())){
+                continue;
+            }
 //            if (!isToday(mm.getDate())){
 //                break;
 //            }
@@ -107,18 +152,21 @@ public class Main {
             }
             SearchResult searchResult = JSON.parseObject(details, SearchResult.class);
             if (searchResult.getMagnets().size()>0){
-                String magnet = searchResult.getMagnets().get(0).getLink();
-                String size = searchResult.getMagnets().get(0).getSize();
+                magNets magNetss  = searchResult.getMagnets().get(0);
+                String magnet = magNetss.getLink();
+                String size = magNetss.getSize();
                 String isIs = "0";
                 for (magNets magNet: searchResult.getMagnets()){
                     if (goodSize(magNet)){
-                        magnet = magNet.getLink();
-                        size = magNet.getSize();
+                        magNetss = magNet;
                         isIs = "1";
                         break;
                     }
                 }
-                System.out.println(magnet +"        "+size+"        "+isIs);
+                System.out.println("<tr>");
+                System.out.print("<th>"+searchResult.getId()+"</th><th>"+searchResult.getDate()+"</th><th>"+magNetss.getLink()+"</th><th>"+magNetss.getLink()+"</th>");
+                System.out.println("<th>"+"<img style='width:5.25rem;height:5.25rem;margin:0 auto;display:block;background-position:0 0' src='"+searchResult.getImg()+"'>"+"</th>");
+                System.out.println("</tr>");
             }
         }
     }
@@ -186,9 +234,9 @@ public class Main {
             if (Objects.equals("",mm.getId()) || Objects.isNull(mm.getId())){
                 continue;
             }
-//            if (!isToday(mm.getDate())){
-//                break;
-//            }
+            if (!isToday(mm.getDate())){
+                break;
+            }
             String details = getRequest(fanhaoUrl + mm.getId());
             if (Objects.isNull(details)){
                 return;
@@ -200,14 +248,29 @@ public class Main {
                     flag = false;
                 }
                 if (Objects.nonNull(searchResult.getStars())){
-                    if (searchResult.getStars().size()>=3){
+                    if (searchResult.getStars().size()>3){
                         flag = false;
                     }
                 }
 
             }
             if (flag){
-                System.out.println(searchResult.getMagnets().get(0).getLink());
+                magNets magNetss  = searchResult.getMagnets().get(0);
+                String magnet = magNetss.getLink();
+                String size = magNetss.getSize();
+                String isIs = "0";
+                for (magNets magNet: searchResult.getMagnets()){
+                    if (goodSize(magNet)){
+                        magNetss = magNet;
+                        isIs = "1";
+                        break;
+                    }
+                }
+//                System.out.println("<tr>");
+//                System.out.print("<th>"+searchResult.getId()+"</th><th>"+searchResult.getDate()+"</th><th>"+magNetss.getLink()+"</th><th>"+magNetss.getLink()+"</th>");
+//                System.out.println("<th>"+"<img style='width:5.25rem;height:5.25rem;margin:0 auto;display:block;background-position:0 0' src='"+searchResult.getImg()+"'>"+"</th>");
+//                System.out.println("</tr>");
+                System.out.println(""+magNetss.getLink());
             }
             flag = true;
         }
@@ -215,14 +278,19 @@ public class Main {
 
     public static void main(String[] args) throws UnsupportedEncodingException {
 //        for (int page = 1;page<11;page++){
-            daily(1);
+//            daily(page);
 //        }
-//          for (String ny : ids){
+          for (String ny : ids){
+//              System.out.println(ny);
+              getInfoById(ny);
+          }
+//        getInfoById("rki");
+//        search("楓カレン");
+//        for (String ny : ids){
 ////              System.out.println(ny);
-//              getInfoById(ny);
+//            getByType(1);
 //          }
-//        getInfoById("2pv");
-//        search("河北彩花");
+
 //        TimerTask task = new TimerTask() {
 //            @Override
 //            public void run() {
@@ -234,7 +302,7 @@ public class Main {
 //        Timer timer = new Timer();
 //        // 延迟 1 秒后执行任务，然后每隔 5 秒执行一次
 //        timer.schedule(task, 1000, 5000);
-
+//        daily(1);1
 
     }
 }
