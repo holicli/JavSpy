@@ -11,6 +11,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
     private static final List<String> likeList = Arrays.asList(new String[]{"河北彩花",
@@ -60,7 +61,7 @@ public class Main {
 
 //        LocalDate today = LocalDate.parse("2023-09-01");
 
-        LocalDate today = LocalDate.parse("2023-06-01");
+        LocalDate today = LocalDate.parse("2022-12-10");
         if (date.isAfter(today)) {
             return true;
         } else {
@@ -108,17 +109,17 @@ public class Main {
             SearchResult searchResult = JSON.parseObject(details, SearchResult.class);
             List<magNets> mms  = searchResult.getMagnets();
             if (mms.size()>0){
-                magNets magNetss  = searchResult.getMagnets().get(0);
+                magNets magNetss  = new magNets();
                 String magnet = magNetss.getLink();
                 String size = magNetss.getSize();
                 String isIs = "0";
-//                for (magNets magNet: searchResult.getMagnets()){
-//                    if (goodSize(magNet)){
-//                        magNetss = magNet;
-//                        isIs = "1";
-//                        break;
-//                    }
-//                }
+                for (magNets magNet: searchResult.getMagnets()){
+                    if (goodSize(magNet)){
+                        magNetss = magNet;
+                        isIs = "1";
+                        break;
+                    }
+                }
 //                System.out.println("<tr>");
 //                System.out.print("<th>"+searchResult.getId()+"</th><th>"+searchResult.getDate()+"</th><th>"+magNetss.getLink()+"</th><th>"+magNetss.getLink()+"</th>");
 //                System.out.println("<th>"+"<img style='width:5.25rem;height:5.25rem;margin:0 auto;display:block;background-position:0 0' src='"+searchResult.getImg()+"'>"+"</th>");
@@ -211,8 +212,8 @@ public class Main {
         }
     }
 
-    public static void getInfoById(String nyID) throws UnsupportedEncodingException {
-        String searchUrl = "http://192.168.0.120:33000/api/v1/movies?page=1&filterType=star&filterValue="+nyID+"&magnet=exist";
+    public static void getInfoById(String nyID,int pageNum) throws UnsupportedEncodingException {
+        String searchUrl = "http://192.168.0.120:33000/api/v1/movies?page="+pageNum+"&filterType=star&filterValue="+nyID+"&magnet=exist";
         String fanhaoUrl = "http://192.168.0.120:33000/api/v1/movies/";
 //        String encode = URLEncoder.encode(nyName, "utf-8");
 //        String keyword = "keyword="+encode;
@@ -220,6 +221,7 @@ public class Main {
 //        Integer pageNum = 1;
 //        String isExist="&magnet=exist";
 //        System.out.println(searchUrl+keyword+pageStr+pageNum+isExist);
+        Boolean hasPage = false;
         String request = getRequest(searchUrl);
         if (Objects.isNull(request)){
             return;
@@ -230,67 +232,87 @@ public class Main {
             return;
         }
         Boolean flag = true;
+        hasPage = pageresult.getPagination().getHasNextPage();
         for (movies mm: moviesList){
             if (Objects.equals("",mm.getId()) || Objects.isNull(mm.getId())){
                 continue;
             }
-            if (!isToday(mm.getDate())){
-                break;
-            }
-            String details = getRequest(fanhaoUrl + mm.getId());
-            if (Objects.isNull(details)){
-                return;
-            }
-            SearchResult searchResult = JSON.parseObject(details, SearchResult.class);
-            List<genRes> genres = searchResult.getGenres();
-            for (genRes gg : genres){
-                if (Objects.equals(gg.getId(),"2")){
-                    flag = false;
-                }
-                if (Objects.nonNull(searchResult.getStars())){
-                    if (searchResult.getStars().size()>3){
-                        flag = false;
-                    }
-                }
-
-            }
-            if (flag){
-                magNets magNetss  = searchResult.getMagnets().get(0);
-                String magnet = magNetss.getLink();
-                String size = magNetss.getSize();
-                String isIs = "0";
-                for (magNets magNet: searchResult.getMagnets()){
-                    if (goodSize(magNet)){
-                        magNetss = magNet;
-                        isIs = "1";
-                        break;
-                    }
-                }
-//                System.out.println("<tr>");
-//                System.out.print("<th>"+searchResult.getId()+"</th><th>"+searchResult.getDate()+"</th><th>"+magNetss.getLink()+"</th><th>"+magNetss.getLink()+"</th>");
-//                System.out.println("<th>"+"<img style='width:5.25rem;height:5.25rem;margin:0 auto;display:block;background-position:0 0' src='"+searchResult.getImg()+"'>"+"</th>");
-//                System.out.println("</tr>");
-                System.out.println(""+magNetss.getLink());
-            }
+//            if (!isToday(mm.getDate())){
+//                break;
+//            }
+            getMovieDetail(mm.getId());
             flag = true;
+        }
+        if (hasPage){
+            getInfoById(nyID,++pageNum);
         }
     }
 
+    public static void getMovieDetail(String id){
+        String fanhaoUrl = "http://192.168.0.120:33000/api/v1/movies/";
+        String details = getRequest(fanhaoUrl + id);
+        SearchResult searchResult = JSON.parseObject(details, SearchResult.class);
+        if (Objects.isNull(searchResult)){
+            return;
+        }
+        if (searchResult.getStars().size() <= 3){
+            return;
+        }
+        List<magNets> mms  = searchResult.getMagnets();
+        if (mms.size()>0){
+            magNets magNetss  = new magNets();
+            String magnet = magNetss.getLink();
+            String size = magNetss.getSize();
+            String isIs = "0";
+            String linkUrl = mms.stream()
+                    .map(magNets::getLink)
+                    .collect(Collectors.joining(", "));
+            Boolean isUncensored = linkUrl.contains("uncensored");
+            Boolean isCn = linkUrl.contains("-C") || linkUrl.contains("-c") || linkUrl.contains("-CH");
+            if (linkUrl.contains("uncensored") || linkUrl.contains("-C") || linkUrl.contains("-c") || linkUrl.contains("-CH")){
+                for (magNets magNet: mms){
+                    if (magNet.getTitle().contains("uncensored")){
+                        magNetss = magNet;
+                        break;
+                    }
+                    if (isCn && !isUncensored){
+                        magNetss = magNet;
+                    }
+                }
+            }else {
+                magNetss = mms.get(0);
+            }
+            System.out.println(magNetss.getLink());
+        }
+    }
     public static void main(String[] args) throws UnsupportedEncodingException {
 //        for (int page = 1;page<11;page++){
 //            daily(page);
 //        }
-          for (String ny : ids){
-//              System.out.println(ny);
-              getInfoById(ny);
-          }
+//        for (int i = 1; i <= 200; i++) {
+//            String str = String.format("%03d", i);
+//            String fh = "ipzz-"+str;
+////            System.out.println(fh);
+//            getMovieDetail(fh);
+//        }
+//        getMovieDetail("IPZ-891");
+//          for (String ny : ids){
+////              System.out.println(ny);
+        String nv = "5kp,2eg,opq,okq,1ny,2mx";
+        List<String> ids = Arrays.asList(new String[]{"5kp",
+                "2eg","opq","okq","1ny","2mx"});
+        for (String id : ids){
+            System.out.println(id);
+            getInfoById(id,1);
+        }
+
+//          }
 //        getInfoById("rki");
 //        search("楓カレン");
 //        for (String ny : ids){
 ////              System.out.println(ny);
 //            getByType(1);
 //          }
-
 //        TimerTask task = new TimerTask() {
 //            @Override
 //            public void run() {
