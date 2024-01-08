@@ -213,8 +213,8 @@ public class Main {
     }
 
     public static void getInfoById(String nyID,int pageNum) throws UnsupportedEncodingException {
-        String searchUrl = "http://192.168.0.120:33000/api/v1/movies?page="+pageNum+"&filterType=star&filterValue="+nyID+"&magnet=exist";
-        String fanhaoUrl = "http://192.168.0.120:33000/api/v1/movies/";
+        String searchUrl = "http://192.168.0.120:33000/api/movies?page="+pageNum+"&filterType=star&filterValue="+nyID+"&magnet=exist";
+        String detalisUrl = "http://192.168.0.120:33000/api/movies/";
 //        String encode = URLEncoder.encode(nyName, "utf-8");
 //        String keyword = "keyword="+encode;
 //        String pageStr = "&page=";
@@ -237,10 +237,12 @@ public class Main {
             if (Objects.equals("",mm.getId()) || Objects.isNull(mm.getId())){
                 continue;
             }
+            String details = getRequest(detalisUrl + mm.getId());
+            SearchResult searchResult = JSON.parseObject(details, SearchResult.class);
 //            if (!isToday(mm.getDate())){
 //                break;
 //            }
-            getMovieDetail(mm.getId());
+//            getMovieDetail(mm.getId());
             flag = true;
         }
         if (hasPage){
@@ -248,9 +250,9 @@ public class Main {
         }
     }
 
-    public static void getMovieDetail(String id){
-        String fanhaoUrl = "http://192.168.0.120:33000/api/v1/movies/";
-        String details = getRequest(fanhaoUrl + id);
+    public static void getMovieDetail(String id,String gid,String uc){
+        String fanhaoUrl = "http://192.168.0.120:33000/api/magnets/";
+        String details = getRequest(fanhaoUrl + id+"?gid="+gid+"&uc=" + uc);
         SearchResult searchResult = JSON.parseObject(details, SearchResult.class);
         if (Objects.isNull(searchResult)){
             return;
